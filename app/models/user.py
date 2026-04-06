@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, UniqueConstraint
 from app.core.session import Base
 from app.models.mixins import TimestampMixin
 from app.models.event import Event
@@ -8,6 +8,10 @@ from app.models.event_response import EventResponse
 
 class User(TimestampMixin, Base):
     __tablename__ = "users"
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "username", name="uq_event_username"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     event_id: Mapped[int] = mapped_column(

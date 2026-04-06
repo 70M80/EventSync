@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey, text
+from sqlalchemy import String, Integer, text
 from app.core.session import Base
 from app.models.mixins import TimestampMixin
 from app.models.user import User
@@ -13,12 +13,10 @@ class Event(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     max_responses: Mapped[int] = mapped_column(
-        Integer, default=20, server_default=text("20")
+        Integer, default=20, server_default=text("20"), nullable=False
     )
     code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
-    admin_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    admin_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Relationships
