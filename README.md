@@ -4,9 +4,6 @@
 
 Inspired by Doodle and When2Meet, but designed specifically for selecting **date ranges** (perfect for planning holidays with friends).
 
-![App Screenshot](https://via.placeholder.com/800x450?text=Holiday+Planner+Screenshot)  
-*(Replace this with a real screenshot later)*
-
 ## ✨ Features
 
 - Create an event in seconds (vacation, trip, weekend, etc.)
