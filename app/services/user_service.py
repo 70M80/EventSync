@@ -5,6 +5,8 @@ from app.models.user import User
 from app.core.codegen import generate_unique_user_code
 from app.core.config import settings
 from app.core.logging import logger
+from app.schemas.websocket import WSMessageType, UserRead
+from app.core.websocket_manager import WebSocketManagerProtocol
 from app.exceptions.base import (
     UserNotFound,
     EventNotFound,
@@ -16,8 +18,9 @@ from app.exceptions.base import (
 
 
 class UserService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, ws_manager: WebSocketManagerProtocol):
         self.uow = uow
+        self.ws_manager = ws_manager
 
     async def get_by_id(self, id: int) -> User:
         user = await self.uow.users.get_by_id(id)
@@ -57,7 +60,15 @@ class UserService:
                 User(username=data_dict["username"], event_id=event.id, access_code=code)
             )
             logger.info("User created", extra={"user_id": user.id, "event_id": event.id})
-            return user
+
+        await self.ws_manager.broadcast_to_event(
+            event.id,
+            {
+                "type": WSMessageType.USER_CREATED.value,
+                "data": {"user": UserRead.model_validate(user).model_dump(mode="json")},
+            },
+        )
+        return user
 
     async def delete_user(self, user: User) -> None:
         async with self.uow:
@@ -68,6 +79,14 @@ class UserService:
                 raise InvalidAdminDelete()
             await self.uow.users.delete(user)
             logger.info("User deleted", extra={"user_id": user.id, "event_id": user.event_id})
+
+        await self.ws_manager.broadcast_to_event(
+            user.event_id,
+            {
+                "type": WSMessageType.USER_DELETED.value,
+                "data": {"user_id": user.id, "username": user.username},
+            },
+        )
 
     async def get_users_by_event_id(self, event_id: int) -> list[User]:
         return await self.uow.users.get_by_event_id(event_id)

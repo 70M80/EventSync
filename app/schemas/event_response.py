@@ -14,7 +14,7 @@ class EventResponseCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self):
-        if self.date_to <= self.date_from:
+        if self.date_to < self.date_from:
             raise ValueError("date_to must be after date_from")
         return self
 

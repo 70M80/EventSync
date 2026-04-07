@@ -4,6 +4,7 @@ from app.exceptions.handlers import register_exception_handlers
 from app.core.session import engine
 from app.core.logging import logger
 from app.api import user, event, event_response
+from app.api.websocket import router as websocket_router
 
 
 @asynccontextmanager
@@ -24,3 +25,4 @@ register_exception_handlers(app)
 app.include_router(user.router)
 app.include_router(event.router)
 app.include_router(event_response.router)
+app.include_router(websocket_router)

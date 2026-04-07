@@ -1,14 +1,17 @@
 from app.core.uow import UnitOfWork
-from app.schemas.event_response import EventResponseCreate
+from app.schemas.event_response import EventResponseCreate, EventResponseRead
 from app.models.event_response import EventResponse
 from app.models.user import User
 from app.core.logging import logger
+from app.schemas.websocket import WSMessageType
 from app.exceptions.base import EventNotFound, EventResponseNotFound, MaximumEventResponsesReached
+from app.core.websocket_manager import WebSocketManagerProtocol
 
 
 class EventResponseService:
-    def __init__(self, uow: UnitOfWork):
+    def __init__(self, uow: UnitOfWork, ws_manager: WebSocketManagerProtocol):
         self.uow = uow
+        self.ws_manager = ws_manager
 
     async def get_by_id(self, event_response_id: int) -> EventResponse:
         event_response = await self.uow.event_responses.get_by_id(event_response_id)
@@ -35,12 +38,30 @@ class EventResponseService:
                 "Event response created",
                 extra={"event_response_id": created_event_response.id, "user_id": user.id, "event_id": user.event_id},
             )
-            return created_event_response
+
+        await self.ws_manager.broadcast_to_event(
+            user.event_id,
+            {
+                "type": WSMessageType.EVENT_RESPONSE_CREATED.value,
+                "data": {
+                    "event_response": EventResponseRead.model_validate(created_event_response).model_dump(mode="json")
+                },
+            },
+        )
+        return created_event_response
 
     async def delete_event_response(self, event_response: EventResponse) -> None:
         async with self.uow:
             await self.uow.event_responses.delete(event_response)
             logger.info("Event response deleted", extra={"event_response_id": event_response.id})
+
+        await self.ws_manager.broadcast_to_event(
+            event_response.event_id,
+            {
+                "type": WSMessageType.EVENT_RESPONSE_DELETED.value,
+                "data": {"event_response_id": event_response.id, "user_id": event_response.user_id},
+            },
+        )
 
     async def get_event_responses_by_event_id(self, event_id: int) -> list[EventResponse]:
         event_responses = await self.uow.event_responses.get_by_event_id(event_id)
