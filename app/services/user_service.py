@@ -1,11 +1,11 @@
 from app.core.uow import UnitOfWork
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserRead
 from app.core.security import verify_password
 from app.models.user import User
 from app.core.codegen import generate_unique_user_code
 from app.core.config import settings
 from app.core.logging import logger
-from app.schemas.websocket import WSMessageType, UserRead
+from app.schemas.websocket import WSMessageType
 from app.core.websocket_manager import WebSocketManagerProtocol
 from app.exceptions.base import (
     UserNotFound,

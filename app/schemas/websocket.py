@@ -1,7 +1,5 @@
 from enum import Enum
 from pydantic import BaseModel
-from app.schemas.user import UserRead
-from app.schemas.event_response import EventResponseRead
 
 
 class WSMessageType(str, Enum):
