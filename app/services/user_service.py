@@ -4,6 +4,15 @@ from app.core.security import verify_password
 from app.models.user import User
 from app.core.codegen import generate_unique_user_code
 from app.core.config import settings
+from app.core.logging import logger
+from app.exceptions.base import (
+    UserNotFound,
+    EventNotFound,
+    EventFull,
+    UserAlreadyExistsInEvent,
+    InvalidEventPassword,
+    InvalidAdminDelete,
+)
 
 
 class UserService:
@@ -13,13 +22,14 @@ class UserService:
     async def get_by_id(self, id: int) -> User:
         user = await self.uow.users.get_by_id(id)
         if not user:
-            raise ValueError("User not found")
+            raise UserNotFound()
         return user
 
     async def get_by_access_code(self, access_code: str) -> User:
         user = await self.uow.users.get_by_access_code(access_code)
         if not user:
-            raise ValueError("User not found")
+            logger.warning("Invalid access code", extra={"access_code_prefix": access_code[:8]})
+            raise UserNotFound()
         return user
 
     async def create_user(self, data: UserCreate) -> User:
@@ -30,32 +40,34 @@ class UserService:
 
             event = await self.uow.events.get_by_code(event_code)
             if not event:
-                raise ValueError("Event not found")
+                raise EventNotFound()
 
             users_in_event = await self.uow.users.get_by_event_id(event.id)
             if len(users_in_event) >= settings.max_users_per_event:
-                raise ValueError("Event full")
+                raise EventFull()
 
             if not verify_password(event_password, event.hashed_password):
-                raise ValueError("Wrong password")
+                raise InvalidEventPassword()
 
             if await self.uow.users.get_by_username_and_event_id(data_dict["username"], event.id):
-                raise ValueError("User with that name already exists in event")
+                raise UserAlreadyExistsInEvent()
 
             code = await generate_unique_user_code(self.uow)
             user = await self.uow.users.create(
                 User(username=data_dict["username"], event_id=event.id, access_code=code)
             )
+            logger.info("User created", extra={"user_id": user.id, "event_id": event.id})
             return user
 
     async def delete_user(self, user: User) -> None:
         async with self.uow:
             event = await self.uow.events.get_by_id(user.event_id)
             if not event:
-                raise ValueError("Event not found")
+                raise EventNotFound()
             if event.admin_id == user.id:
-                raise ValueError("Admin cannot remove themselves")
+                raise InvalidAdminDelete()
             await self.uow.users.delete(user)
+            logger.info("User deleted", extra={"user_id": user.id, "event_id": user.event_id})
 
     async def get_users_by_event_id(self, event_id: int) -> list[User]:
         return await self.uow.users.get_by_event_id(event_id)

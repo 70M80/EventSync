@@ -4,6 +4,7 @@ from app.services.event_response_service import EventResponseService
 from app.dependencies.common import get_event_response_service
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.exceptions.base import PermissionDenied
 
 
 async def get_authorized_event_response(
@@ -14,6 +15,6 @@ async def get_authorized_event_response(
     event_response = await event_response_service.get_by_id(event_response_id)
 
     if event_response.user_id != current_user.id:
-        raise ValueError("Permission denied")
+        raise PermissionDenied()
 
     return event_response

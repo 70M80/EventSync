@@ -3,6 +3,7 @@ from app.services.event_service import EventService
 from app.dependencies.auth import get_current_user
 from app.dependencies.common import get_event_service
 from app.models.user import User
+from app.exceptions.base import PermissionDenied
 
 
 async def get_admin_event(
@@ -12,7 +13,7 @@ async def get_admin_event(
     """Get the current user's event and return it if the user is an administrator"""
     event = await event_service.get_by_id(current_user.event_id)
     if event.admin_id != current_user.id:
-        raise ValueError("Permission denied")
+        raise PermissionDenied()
 
     return event
 

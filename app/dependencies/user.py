@@ -6,6 +6,7 @@ from app.dependencies.auth import get_current_user
 from app.dependencies.common import get_user_service
 from app.dependencies.common import get_event_service
 from app.models.user import User
+from app.exceptions.base import PermissionDenied
 
 
 async def get_authorized_user(
@@ -19,11 +20,11 @@ async def get_authorized_user(
     # check if current user is admin in his event
     event = await event_service.get_by_id(current_user.event_id)
     if event.admin_id != current_user.id:
-        raise ValueError("Permission denied")
+        raise PermissionDenied()
 
     # check if user that we want get is in same event as current user(admin)
     user = await user_service.get_by_id(user_id)
     if user.event_id != event.id:
-        raise ValueError("Permission denied")
+        raise PermissionDenied()
 
     return user

@@ -1,6 +1,7 @@
+import string, secrets
 from app.core.uow import UnitOfWork
 from app.core.config import settings
-import string, secrets
+from app.exceptions.base import CodeGenFailed
 
 
 async def generate_code(length: int) -> str:
@@ -14,7 +15,7 @@ async def generate_unique_user_code(uow: UnitOfWork, length: int = 10) -> str:
         existing = await uow.users.get_by_access_code(code)
         if not existing:
             return code
-    raise RuntimeError("Failed to generate unique user access_code")
+    raise CodeGenFailed()
 
 
 async def generate_unique_event_code(uow: UnitOfWork, length: int = 12) -> str:
@@ -23,4 +24,4 @@ async def generate_unique_event_code(uow: UnitOfWork, length: int = 12) -> str:
         existing = await uow.events.get_by_code(code)
         if not existing:
             return code
-    raise RuntimeError("Failed to generate unique event code")
+    raise CodeGenFailed()
