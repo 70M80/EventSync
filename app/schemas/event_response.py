@@ -1,5 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, ConfigDict, model_validator
+from app.schemas.user import UserRead
 
 
 ##############################
@@ -30,3 +31,8 @@ class EventResponseRead(BaseModel):
     user_id: int
     date_from: date
     date_to: date
+    user: UserRead
+
+
+class EventResponsesRead(BaseModel):
+    event_responses: list[EventResponseRead]

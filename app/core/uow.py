@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
 from app.repositories.event_repository import EventRepository
-from app.repositories.event_response_repository import EventReponseRepository
+from app.repositories.event_response_repository import EventResponseRepository
 
 
 class UnitOfWork:
@@ -9,7 +9,7 @@ class UnitOfWork:
         self.db = db
         self.users = UserRepository(db)
         self.events = EventRepository(db)
-        self.event_responses = EventReponseRepository(db)
+        self.event_responses = EventResponseRepository(db)
 
     async def __aenter__(self):
         return self

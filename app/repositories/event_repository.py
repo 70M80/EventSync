@@ -19,7 +19,7 @@ class EventRepository:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: int) -> Event | None:
+    async def get_by_code(self, code: str) -> Event | None:
         query = select(Event).where(Event.code == code)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()

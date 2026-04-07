@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.core.session import engine
+from app.api import user, event, event_response
 
 
 @asynccontextmanager
@@ -13,3 +14,8 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="EventSync", lifespan=lifespan)
+
+# API routers
+app.include_router(user.router)
+app.include_router(event.router)
+app.include_router(event_response.router)

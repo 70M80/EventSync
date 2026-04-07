@@ -8,16 +8,11 @@ from pydantic import (
 )
 from typing import Annotated, Optional, Any
 from app.core.config import settings
+from app.schemas.user import UserReadWithAccessCode
 
-NameStr = Annotated[
-    str, StringConstraints(min_length=1, max_length=50, strip_whitespace=True)
-]
-DescriptionStr = Annotated[
-    str, StringConstraints(min_length=1, max_length=500, strip_whitespace=True)
-]
-UsernameStr = Annotated[
-    str, StringConstraints(min_length=1, max_length=20, strip_whitespace=True)
-]
+NameStr = Annotated[str, StringConstraints(min_length=1, max_length=50, strip_whitespace=True)]
+DescriptionStr = Annotated[str, StringConstraints(min_length=1, max_length=500, strip_whitespace=True)]
+UsernameStr = Annotated[str, StringConstraints(min_length=1, max_length=20, strip_whitespace=True)]
 MaxResponsesInt = Annotated[
     int,
     Field(
@@ -117,8 +112,5 @@ class EventRead(BaseModel):
 class EventCreateResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    code: str
-    access_code: str  # admin access_code
-    name: str
-    max_responses: int
+    user: UserReadWithAccessCode
+    event: EventRead

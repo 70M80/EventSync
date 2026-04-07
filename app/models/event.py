@@ -1,9 +1,13 @@
+from __future__ import annotations
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, text
 from app.core.session import Base
 from app.models.mixins import TimestampMixin
-from app.models.user import User
-from app.models.event_response import EventResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .user import User
+    from .event_response import EventResponse
 
 
 class Event(TimestampMixin, Base):
@@ -12,11 +16,9 @@ class Event(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    max_responses: Mapped[int] = mapped_column(
-        Integer, default=20, server_default=text("20"), nullable=False
-    )
+    max_responses: Mapped[int] = mapped_column(Integer, default=20, server_default=text("20"), nullable=False)
     code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
-    admin_id: Mapped[int] = mapped_column(Integer, index=True, nullable=False)
+    admin_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Relationships
