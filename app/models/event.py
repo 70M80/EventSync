@@ -16,7 +16,7 @@ class Event(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    max_responses: Mapped[int] = mapped_column(Integer, default=20, server_default=text("20"), nullable=False)
+    max_responses: Mapped[int] = mapped_column(Integer, default=20, server_default=text("20"), nullable=False)  # user
     code: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     admin_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)

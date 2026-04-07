@@ -16,10 +16,17 @@ class EventResponseService:
 
     async def create_event_response(self, data: EventResponseCreate, user: User) -> EventResponse:
         async with self.uow:
-            # TODO: check max reponses per user
-            # TODO: check overlap with existing user responses and merge if needed
-            # If there is an overlap, update the existing response here.
-            # On FE, it always checks whether an response with that ID already exists and updates it as needed.
+            user_responses = await self.uow.event_responses.get_by_user_id(user.id)
+            event = await self.uow.events.get_by_id(user.event_id)
+            if not event:
+                raise ValueError("Event not found")
+            if len(user_responses) >= event.max_responses:
+                raise ValueError("Maximum responses reached")
+
+            # TODO:
+            # Check overlap with user_responses and merge if needed.
+            # If there is an overlap, update the existing response.
+
             event_response = EventResponse(**data.model_dump(), user_id=user.id, event_id=user.event_id)
             created_event_response = await self.uow.event_responses.create(event_response)
             return created_event_response

@@ -23,6 +23,11 @@ class EventResponseRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def get_by_user_id(self, user_id: int) -> list[EventResponse]:
+        query = select(EventResponse).where(EventResponse.user_id == user_id)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def delete(self, event_response: EventResponse) -> None:
         await self.db.delete(event_response)
         await self.db.flush()

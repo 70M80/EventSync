@@ -3,6 +3,7 @@ from app.schemas.user import UserCreate
 from app.core.security import verify_password
 from app.models.user import User
 from app.core.codegen import generate_unique_user_code
+from app.core.config import settings
 
 
 class UserService:
@@ -31,13 +32,15 @@ class UserService:
             if not event:
                 raise ValueError("Event not found")
 
+            users_in_event = await self.uow.users.get_by_event_id(event.id)
+            if len(users_in_event) >= settings.max_users_per_event:
+                raise ValueError("Event full")
+
             if not verify_password(event_password, event.hashed_password):
                 raise ValueError("Wrong password")
 
             if await self.uow.users.get_by_username_and_event_id(data_dict["username"], event.id):
                 raise ValueError("User with that name already exists in event")
-
-            # TODO: check max users per event
 
             code = await generate_unique_user_code(self.uow)
             user = await self.uow.users.create(
