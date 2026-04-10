@@ -25,6 +25,5 @@ class UserReadWithAccessCode(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    access_code: str
-    event_id: int
     username: str
+    access_code: str

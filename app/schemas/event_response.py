@@ -34,5 +34,10 @@ class EventResponseRead(BaseModel):
     user: UserRead
 
 
+class EventResponseResult(BaseModel):
+    event_response: EventResponseRead
+    deleted_ids: list[int]
+
+
 class EventResponsesRead(BaseModel):
     event_responses: list[EventResponseRead]

@@ -9,6 +9,7 @@ from app.schemas.websocket import WSMessageType
 from app.core.websocket_manager import WebSocketManagerProtocol
 from app.exceptions.base import (
     UserNotFound,
+    UnknownAccessCode,
     EventNotFound,
     EventFull,
     UserAlreadyExistsInEvent,
@@ -32,7 +33,7 @@ class UserService:
         user = await self.uow.users.get_by_access_code(access_code)
         if not user:
             logger.warning("Invalid access code", extra={"access_code_prefix": access_code[:8]})
-            raise UserNotFound()
+            raise UnknownAccessCode()
         return user
 
     async def create_user(self, data: UserCreate) -> User:

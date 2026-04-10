@@ -15,6 +15,11 @@ async def create_user(
     return await user_service.create_user(data)
 
 
+@router.get("/me", response_model=UserReadWithAccessCode)
+async def get_me(user: User = Depends(get_current_user)):
+    return user
+
+
 @router.get("/", response_model=UsersRead)
 async def get_event_users(
     user: User = Depends(get_current_user),

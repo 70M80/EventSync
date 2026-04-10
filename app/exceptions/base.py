@@ -48,6 +48,14 @@ class MissingAccessCode(CustomHTTPException):
             error_code="MISSING_ACCESS_CODE",
         )
 
+class UnknownAccessCode(CustomHTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=401,
+            detail="Unknown access code",
+            error_code="UNKNOWN_ACCESS_CODE",
+        )
+
 
 class MaximumEventResponsesReached(CustomHTTPException):
     def __init__(self):

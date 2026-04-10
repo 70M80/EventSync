@@ -1,11 +1,13 @@
 from app.core.uow import UnitOfWork
-from app.schemas.event_response import EventResponseCreate, EventResponseRead
+from app.schemas.event_response import EventResponseCreate, EventResponseRead, EventResponseResult
 from app.models.event_response import EventResponse
 from app.models.user import User
 from app.core.logging import logger
 from app.schemas.websocket import WSMessageType
 from app.exceptions.base import EventNotFound, EventResponseNotFound, MaximumEventResponsesReached
 from app.core.websocket_manager import WebSocketManagerProtocol
+from datetime import date
+from datetime import timedelta
 
 
 class EventResponseService:
@@ -19,25 +21,35 @@ class EventResponseService:
             raise EventResponseNotFound()
         return event_response
 
-    async def create_event_response(self, data: EventResponseCreate, user: User) -> EventResponse:
+    async def create_event_response(self, data: EventResponseCreate, user: User) -> EventResponseResult:
         async with self.uow:
             user_responses = await self.uow.event_responses.get_by_user_id(user.id)
             event = await self.uow.events.get_by_id(user.event_id)
             if not event:
                 raise EventNotFound()
-            if len(user_responses) >= event.max_responses:
+
+            final_start, final_end, to_delete = self._merge_intervals(user_responses, data.date_from, data.date_to)
+
+            deleted_responses = []
+            # delete old overlapping records
+            for r in to_delete:
+                await self.uow.event_responses.delete(r)
+                deleted_responses.append(r)
+
+            # enforce limit AFTER merge
+            remaining_count = len(user_responses) - len(to_delete)
+            if remaining_count >= event.max_responses:
                 raise MaximumEventResponsesReached()
 
-            # TODO:
-            # Check overlap with user_responses and merge if needed.
-            # If there is an overlap, update the existing response.
-
-            event_response = EventResponse(**data.model_dump(), user_id=user.id, event_id=user.event_id)
-            created_event_response = await self.uow.event_responses.create(event_response)
-            logger.info(
-                "Event response created",
-                extra={"event_response_id": created_event_response.id, "user_id": user.id, "event_id": user.event_id},
+            # create new merged response
+            event_response = EventResponse(
+                date_from=final_start,
+                date_to=final_end,
+                user_id=user.id,
+                event_id=user.event_id,
             )
+
+            created_event_response = await self.uow.event_responses.create(event_response)
 
         await self.ws_manager.broadcast_to_event(
             user.event_id,
@@ -48,7 +60,23 @@ class EventResponseService:
                 },
             },
         )
-        return created_event_response
+
+        for r in deleted_responses:
+            await self.ws_manager.broadcast_to_event(
+                user.event_id,
+                {
+                    "type": WSMessageType.EVENT_RESPONSE_DELETED.value,
+                    "data": {
+                        "event_response_id": r.id,
+                        "user_id": r.user_id,
+                    },
+                },
+            )
+        deleted_ids = [deleted_response.id for deleted_response in deleted_responses]
+
+        return EventResponseResult(
+            event_response=EventResponseRead.model_validate(created_event_response), deleted_ids=deleted_ids
+        )
 
     async def delete_event_response(self, event_response: EventResponse) -> None:
         async with self.uow:
@@ -66,3 +94,36 @@ class EventResponseService:
     async def get_event_responses_by_event_id(self, event_id: int) -> list[EventResponse]:
         event_responses = await self.uow.event_responses.get_by_event_id(event_id)
         return event_responses
+
+    def _merge_intervals(
+        self, existing: list[EventResponse], new_start: date, new_end: date
+    ) -> tuple[date, date, list[EventResponse]]:
+        """
+        Merges the newly requested interval with all existing intervals that overlap
+        or are adjacent (touching) to it.
+
+        Logic:
+            1. Start with the new interval as the base merged range.
+            2. For every existing response:
+            - If it overlaps or touches the current merged range → expand the range
+                to cover both and mark the old response for deletion.
+            3. Return the final merged range + list of responses that need to be deleted.
+
+        Why + timedelta(days=1)?
+            Because we want to merge adjacent days (e.g. 5-10 and 11-15 → should become 5-15).
+        """
+        if not existing:
+            return new_start, new_end, []
+
+        min_start = new_start
+        max_end = new_end
+        to_delete: list[EventResponse] = []
+
+        for resp in existing:
+            # Check for overlap or adjacency (including touching at the boundary)
+            if resp.date_from <= max_end + timedelta(days=1) and resp.date_to >= min_start - timedelta(days=1):
+                min_start = min(min_start, resp.date_from)
+                max_end = max(max_end, resp.date_to)
+                to_delete.append(resp)
+
+        return min_start, max_end, to_delete

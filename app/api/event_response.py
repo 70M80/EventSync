@@ -3,6 +3,7 @@ from app.schemas.event_response import (
     EventResponseCreate,
     EventResponseRead,
     EventResponsesRead,
+    EventResponseResult,
 )
 from app.services.event_response_service import EventResponseService
 from app.dependencies.event_response import (
@@ -27,7 +28,7 @@ async def get_event_responses(
     return EventResponsesRead(event_responses=event_response_reads)
 
 
-@router.post("/", response_model=EventResponseRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EventResponseResult, status_code=status.HTTP_201_CREATED)
 async def create_event_response(
     data: EventResponseCreate,
     current_user: User = Depends(get_current_user),
