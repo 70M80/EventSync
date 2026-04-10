@@ -48,6 +48,7 @@ class MissingAccessCode(CustomHTTPException):
             error_code="MISSING_ACCESS_CODE",
         )
 
+
 class UnknownAccessCode(CustomHTTPException):
     def __init__(self):
         super().__init__(
@@ -57,12 +58,12 @@ class UnknownAccessCode(CustomHTTPException):
         )
 
 
-class MaximumEventResponsesReached(CustomHTTPException):
+class MaximumEventAnswersReached(CustomHTTPException):
     def __init__(self):
         super().__init__(
             status_code=409,
-            detail="Maximum Event responses reached",
-            error_code="MAXIMUM_EVENT_RESPONSES_REACHED",
+            detail="Maximum Event answers reached",
+            error_code="MAXIMUM_EVENT_ANSWERS_REACHED",
         )
 
 
@@ -112,6 +113,6 @@ class EventNotFound(CustomHTTPException):
         super().__init__(status_code=404, detail="Event not found", error_code="EVENT_NOT_FOUND")
 
 
-class EventResponseNotFound(CustomHTTPException):
+class EventAnswerNotFound(CustomHTTPException):
     def __init__(self):
-        super().__init__(status_code=404, detail="Event Response not found", error_code="EVENT_RESPONSE_NOT_FOUND")
+        super().__init__(status_code=404, detail="Event answer not found", error_code="EVENT_ANSWER_NOT_FOUND")

@@ -8,7 +8,7 @@ from app.schemas.user import UserRead
 ##############################
 
 
-class EventResponseCreate(BaseModel):
+class EventAnswerCreate(BaseModel):
     date_from: date
     date_to: date
 
@@ -24,7 +24,7 @@ class EventResponseCreate(BaseModel):
 ###########################
 
 
-class EventResponseRead(BaseModel):
+class EventAnswerRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -34,10 +34,10 @@ class EventResponseRead(BaseModel):
     user: UserRead
 
 
-class EventResponseResult(BaseModel):
-    event_response: EventResponseRead
+class EventAnswerResult(BaseModel):
+    event_answer: EventAnswerRead
     deleted_ids: list[int]
 
 
-class EventResponsesRead(BaseModel):
-    event_responses: list[EventResponseRead]
+class EventAnswersRead(BaseModel):
+    event_answers: list[EventAnswerRead]

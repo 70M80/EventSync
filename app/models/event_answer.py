@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from .event import Event
 
 
-class EventResponse(TimestampMixin, Base):
-    __tablename__ = "event_responses"
+class EventAnswer(TimestampMixin, Base):
+    __tablename__ = "event_answers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
@@ -21,5 +21,5 @@ class EventResponse(TimestampMixin, Base):
     date_to: Mapped[date] = mapped_column(Date, nullable=False)
 
     # Relationships
-    event: Mapped["Event"] = relationship("Event", back_populates="event_responses", lazy="selectin")
-    user: Mapped["User"] = relationship("User", back_populates="event_responses", lazy="selectin")
+    event: Mapped["Event"] = relationship("Event", back_populates="event_answers", lazy="selectin")
+    user: Mapped["User"] = relationship("User", back_populates="event_answers", lazy="selectin")

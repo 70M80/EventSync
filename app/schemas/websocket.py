@@ -7,8 +7,8 @@ class WSMessageType(str, Enum):
 
     USER_CREATED = "user_created"
     USER_DELETED = "user_deleted"
-    EVENT_RESPONSE_CREATED = "event_response_created"
-    EVENT_RESPONSE_DELETED = "event_response_deleted"
+    EVENT_ANSWER_CREATED = "event_answer_created"
+    EVENT_ANSWER_DELETED = "event_answer_deleted"
 
 
 class WSMessage(BaseModel):

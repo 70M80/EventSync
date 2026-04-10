@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .user import User
-    from .event_response import EventResponse
+    from .event_answer import EventAnswer
 
 
 class Event(TimestampMixin, Base):
@@ -25,8 +25,8 @@ class Event(TimestampMixin, Base):
     users: Mapped[list["User"]] = relationship(
         "User", back_populates="event", cascade="all, delete-orphan", lazy="selectin"
     )
-    event_responses: Mapped[list["EventResponse"]] = relationship(
-        "EventResponse",
+    event_answers: Mapped[list["EventAnswer"]] = relationship(
+        "EventAnswer",
         back_populates="event",
         cascade="all, delete-orphan",
         lazy="selectin",
