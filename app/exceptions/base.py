@@ -62,7 +62,7 @@ class MaximumEventAnswersReached(CustomHTTPException):
     def __init__(self):
         super().__init__(
             status_code=409,
-            detail="Maximum Event answers reached",
+            detail="Maximum answers reached",
             error_code="MAXIMUM_EVENT_ANSWERS_REACHED",
         )
 
