@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.middleware import SlowAPIMiddleware
 from app.core.config import settings
 from app.exceptions.handlers import register_exception_handlers
 from app.core.session import engine
+from app.core.limiter import limiter
 from app.core.logging import logger
 from app.api import event_answer, user, event
 from app.api.websocket import router as websocket_router
@@ -19,6 +21,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="EventSync", lifespan=lifespan)
+app.state.limiter = limiter
 
 # CORS middleware
 app.add_middleware(
@@ -28,6 +31,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Access-Code"],
 )
+app.add_middleware(SlowAPIMiddleware)
 
 # Exception handler
 register_exception_handlers(app)

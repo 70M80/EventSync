@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
 from app.schemas.event_answer import (
     EventAnswerCreate,
     EventAnswerRead,
@@ -13,12 +13,15 @@ from app.dependencies.event_answer import (
 from app.models.user import User
 from app.models.event_answer import EventAnswer
 from app.dependencies.auth import get_current_user
+from app.main import limiter
 
 router = APIRouter(prefix="/event_answers", tags=["event_answers"])
 
 
 @router.get("/", response_model=EventAnswersRead)
+@limiter.limit("10/minute")
 async def get_event_answers(
+    request: Request,
     current_user: User = Depends(get_current_user),
     event_answer_service: EventAnswerService = Depends(get_event_answer_service),
 ):
@@ -29,7 +32,9 @@ async def get_event_answers(
 
 
 @router.post("/", response_model=EventAnswerResult, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_event_answer(
+    request: Request,
     data: EventAnswerCreate,
     current_user: User = Depends(get_current_user),
     event_answer_service: EventAnswerService = Depends(get_event_answer_service),
@@ -38,7 +43,9 @@ async def create_event_answer(
 
 
 @router.delete("/{event_answer_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_event_answer(
+    request: Request,
     event_answer: EventAnswer = Depends(get_authorized_event_answer),
     event_answer_service: EventAnswerService = Depends(get_event_answer_service),
 ):
