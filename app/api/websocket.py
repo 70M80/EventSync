@@ -1,9 +1,9 @@
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
 from app.core.websocket_manager import WebSocketManagerProtocol, get_websocket_manager
 from app.services.user_service import UserService
 from app.dependencies.common import get_user_service
 from app.core.logging import logger
-
 
 router = APIRouter(tags=["websocket"])
 
@@ -27,24 +27,32 @@ async def websocket_endpoint(
     - A new event response is created
     - An event response is deleted
     """
-
     user = await user_service.get_by_access_code(access_code)
-    event_id = user.event_id
+    if not user:
+        try:
+            await websocket.close(code=4001, reason="Invalid or expired access code")
+        except Exception:
+            pass
+        return
 
-    await ws_manager.connect(websocket, event_id)
+    event_id = user.event_id
+    await ws_manager.connect(websocket, event_id, user.id)
 
     try:
         while True:
             try:
-                data = await websocket.receive_json()
-                if data.get("type") == "ping":
-                    await websocket.send_json({"type": "pong"})
-
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=80.0)
+                msg_type = data.get("type")
+                if msg_type == "pong":
+                    ws_manager.update_activity(websocket)
+            except asyncio.TimeoutError:
+                logger.info("WebSocket receive timeout", extra={"event_id": event_id})
+                break
             except WebSocketDisconnect:
+                logger.info("Client disconnected normally", extra={"event_id": event_id})
                 break
             except Exception as e:
-                logger.warning(f"Receive error: {e}")
+                logger.warning(f"WebSocket error: {e}", extra={"event_id": event_id})
                 break
-
     finally:
-        ws_manager.disconnect(websocket, event_id)
+        ws_manager.disconnect(websocket)

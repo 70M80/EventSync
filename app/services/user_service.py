@@ -42,7 +42,8 @@ class UserService:
             event_code = data_dict.pop("event_code")
             event_password = data_dict.pop("event_password")
 
-            event = await self.uow.events.get_by_code(event_code)
+            # Lock
+            event = await self.uow.events.get_by_code_for_update(event_code)
             if not event:
                 raise EventNotFound()
 

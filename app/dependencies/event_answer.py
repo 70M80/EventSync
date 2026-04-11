@@ -14,7 +14,7 @@ async def get_authorized_event_answer(
 ):
     event_answer = await event_answer_service.get_by_id(event_answer_id)
 
-    if event_answer.user_id != current_user.id:
+    if event_answer.user_id != current_user.id or event_answer.event_id != current_user.event_id:
         raise PermissionDenied()
 
     return event_answer

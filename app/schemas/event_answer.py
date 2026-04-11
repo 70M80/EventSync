@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from pydantic import BaseModel, ConfigDict, model_validator
 from app.schemas.user import UserRead
 
@@ -15,7 +15,11 @@ class EventAnswerCreate(BaseModel):
     @model_validator(mode="after")
     def validate_dates(self):
         if self.date_to < self.date_from:
-            raise ValueError("date_to must be after date_from")
+            raise ValueError("Date to must be after date_from")
+        if self.date_from < date.today():
+            raise ValueError("Date from cannot be in the past")
+        if self.date_to > date.today() + timedelta(days=365 + 2):
+            raise ValueError("Date to too far in the future")
         return self
 
 

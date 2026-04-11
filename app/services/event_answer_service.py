@@ -23,7 +23,7 @@ class EventAnswerService:
 
     async def create_event_answer(self, data: EventAnswerCreate, user: User) -> EventAnswerResult:
         async with self.uow:
-            user_responses = await self.uow.event_answers.get_by_user_id(user.id)
+            user_responses = await self.uow.event_answers.get_by_user_id_for_update(user.id)
             event = await self.uow.events.get_by_id(user.event_id)
             if not event:
                 raise EventNotFound()

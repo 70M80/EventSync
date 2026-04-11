@@ -8,10 +8,17 @@ class Settings(BaseSettings):
     async_database_url: str
     engine_pool_size: int = 20
     engine_max_overflow: int = 10
+    db_timeout: int = 20
+    command_timeout: int = 45
+    statement_timeout: str = "60000"
 
     max_users_per_event: int = 10
     max_responses_per_user: int = 20
     max_tries_code_generation: int = 10
+
+    ping_interval: int = 30
+    idle_timeout: int = 120
+    max_connections_per_event: int = 20
 
     log_level: str = "INFO"
 

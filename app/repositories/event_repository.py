@@ -24,6 +24,11 @@ class EventRepository:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_code_for_update(self, code: str) -> Event | None:
+        query = select(Event).where(Event.code == code).with_for_update()
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
     async def update(self, event: Event, update_data: Mapping[str, Any]) -> Event:
         """
         Updates Event entity with partial data.

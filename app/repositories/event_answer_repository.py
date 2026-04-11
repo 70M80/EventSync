@@ -28,6 +28,11 @@ class EventAnswerRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def get_by_user_id_for_update(self, user_id: int) -> list[EventAnswer]:
+        query = select(EventAnswer).where(EventAnswer.user_id == user_id).with_for_update()
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def delete(self, event_answer: EventAnswer) -> None:
         await self.db.delete(event_answer)
         await self.db.flush()
