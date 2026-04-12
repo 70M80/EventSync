@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Set, Protocol, Optional
 from fastapi import WebSocket
 from starlette.websockets import WebSocketDisconnect
@@ -47,8 +47,8 @@ class InMemoryWebSocketManager:
         self.connection_metadata[websocket] = {
             "event_id": event_id,
             "user_id": user_id,
-            "connected_at": datetime.utcnow(),
-            "last_activity": datetime.utcnow(),
+            "connected_at": datetime.now(timezone.utc),
+            "last_activity": datetime.now(timezone.utc),
         }
 
         logger.info(
@@ -60,7 +60,7 @@ class InMemoryWebSocketManager:
 
     def update_activity(self, websocket: WebSocket) -> None:
         if websocket in self.connection_metadata:
-            self.connection_metadata[websocket]["last_activity"] = datetime.utcnow()
+            self.connection_metadata[websocket]["last_activity"] = datetime.now(timezone.utc)
 
     def disconnect(self, websocket: WebSocket, event_id: Optional[int] = None) -> None:
         if event_id is None and websocket in self.connection_metadata:
@@ -88,7 +88,7 @@ class InMemoryWebSocketManager:
                     break
 
                 last_activity = self.connection_metadata.get(websocket, {}).get("last_activity")
-                if last_activity and datetime.utcnow() - last_activity > timedelta(seconds=self.IDLE_TIMEOUT):
+                if last_activity and datetime.now(timezone.utc) - last_activity > timedelta(seconds=self.IDLE_TIMEOUT):
                     logger.info("Idle timeout - disconnecting", extra={"event_id": event_id})
                     break
 

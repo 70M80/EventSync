@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, status, Request
 from app.schemas.event import EventCreate, EventCreateResponse, EventRead, EventUpdate
 from app.schemas.user import UserReadWithAccessCode
 from app.services.event_service import EventService
+from app.dependencies.common import get_event_service
 from app.dependencies.event import (
-    get_event_service,
     get_authorized_event,
     get_admin_event,
 )
 from app.models.event import Event
-from app.main import limiter
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/events", tags=["events"])
 

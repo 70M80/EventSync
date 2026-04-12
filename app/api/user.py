@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, status, Request
 from app.schemas.user import UserCreate, UserReadWithAccessCode, UsersRead, UserRead
 from app.services.user_service import UserService
-from app.dependencies.user import get_user_service, get_authorized_user, get_current_user
+from app.dependencies.auth import get_current_user
+from app.dependencies.common import get_user_service
+from app.dependencies.user import get_authorized_user
 from app.models.user import User
-from app.main import limiter
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/users", tags=["users"])
 

@@ -32,6 +32,8 @@ def validate_password_strength(v: str) -> str:
     stripped = v.strip()
     if len(stripped) < 5:
         raise ValueError("Password must be at least 5 characters long")
+    if len(stripped) > 20:
+        raise ValueError("Password must be no more than 20 characters long")
 
     return stripped
 

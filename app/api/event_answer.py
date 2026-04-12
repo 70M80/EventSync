@@ -6,14 +6,12 @@ from app.schemas.event_answer import (
     EventAnswerResult,
 )
 from app.services.event_answer_service import EventAnswerService
-from app.dependencies.event_answer import (
-    get_event_answer_service,
-    get_authorized_event_answer,
-)
+from app.dependencies.common import get_event_answer_service
+from app.dependencies.event_answer import get_authorized_event_answer
 from app.models.user import User
 from app.models.event_answer import EventAnswer
 from app.dependencies.auth import get_current_user
-from app.main import limiter
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/event_answers", tags=["event_answers"])
 

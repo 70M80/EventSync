@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     command_timeout: int = 45
     statement_timeout: str = "60000"
 
-    max_users_per_event: int = 10
-    max_responses_per_user: int = 20
+    max_users_per_event: int = 20
+    max_responses_per_user: int = 10
     max_tries_code_generation: int = 10
 
     ping_interval: int = 30

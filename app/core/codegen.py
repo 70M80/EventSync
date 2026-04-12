@@ -9,7 +9,7 @@ async def generate_code(length: int) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-async def generate_unique_user_code(uow: UnitOfWork, length: int = 10) -> str:
+async def generate_unique_user_code(uow: UnitOfWork, length: int = 12) -> str:
     for _ in range(settings.max_tries_code_generation):
         code = await generate_code(length)
         existing = await uow.users.get_by_access_code(code)
