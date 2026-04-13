@@ -10,4 +10,5 @@ exec gunicorn \
   -b 0.0.0.0:8000 \
   --access-logfile - \
   --error-logfile - \
+  --worker-tmp-dir /tmp \
   --log-level ${LOG_LEVEL:-info}

@@ -18,6 +18,7 @@ services:
 
   migration:
     build: .
+    entrypoint: []
     command: alembic upgrade head
     env_file:
       - .env
