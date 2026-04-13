@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status, Request, Response
 from app.schemas.event import EventCreate, EventCreateResponse, EventRead, EventUpdate
 from app.schemas.user import UserReadWithAccessCode
 from app.services.event_service import EventService
@@ -9,6 +9,7 @@ from app.dependencies.event import (
 )
 from app.models.event import Event
 from app.core.limiter import limiter
+from app.core.cookies import set_access_cookie
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -17,10 +18,12 @@ router = APIRouter(prefix="/events", tags=["events"])
 @limiter.limit("2/minute")
 async def create_event(
     request: Request,
+    response: Response,
     data: EventCreate,
     event_service: EventService = Depends(get_event_service),
 ):
     event, user = await event_service.create_event(data)
+    set_access_cookie(response, user.access_code)
     return EventCreateResponse(
         event=EventRead.model_validate(event),
         user=UserReadWithAccessCode.model_validate(user),

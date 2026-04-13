@@ -1,4 +1,4 @@
-from fastapi import Header, Depends
+from fastapi import Cookie, Depends
 from typing import Annotated
 from app.services.user_service import UserService
 from app.dependencies.common import get_user_service
@@ -7,15 +7,15 @@ from app.exceptions.base import MissingAccessCode
 
 
 async def get_access_code(
-    x_access_code: Annotated[str | None, Header(alias="X-Access-Code")] = None,
+    access_code: Annotated[str | None, Cookie()] = None,
 ) -> str:
     """
-    Get access_code from `X-Access-Code` header
+    Get access_code from cookie
     """
-    if not x_access_code:
+    if not access_code:
         raise MissingAccessCode()
 
-    return x_access_code
+    return access_code
 
 
 async def get_current_user(

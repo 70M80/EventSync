@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, status, Request, Response
 from app.schemas.user import UserCreate, UserReadWithAccessCode, UsersRead, UserRead
 from app.services.user_service import UserService
 from app.dependencies.auth import get_current_user
@@ -6,6 +6,7 @@ from app.dependencies.common import get_user_service
 from app.dependencies.user import get_authorized_user
 from app.models.user import User
 from app.core.limiter import limiter
+from app.core.cookies import set_access_cookie
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -14,15 +15,19 @@ router = APIRouter(prefix="/users", tags=["users"])
 @limiter.limit("2/minute")
 async def create_user(
     request: Request,
+    response: Response,
     data: UserCreate,
     user_service: UserService = Depends(get_user_service),
 ):
-    return await user_service.create_user(data)
+    user = await user_service.create_user(data)
+    set_access_cookie(response, user.access_code)
+    return user
 
 
 @router.get("/me", response_model=UserReadWithAccessCode)
 @limiter.limit("10/minute")
-async def get_me(request: Request, user: User = Depends(get_current_user)):
+async def get_me(request: Request, response: Response, user: User = Depends(get_current_user)):
+    set_access_cookie(response, user.access_code)
     return user
 
 

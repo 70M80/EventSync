@@ -7,7 +7,7 @@ from app.exceptions.handlers import register_exception_handlers
 from app.core.session import engine
 from app.core.limiter import limiter
 from app.core.logging import logger
-from app.api import event_answer, user, event
+from app.api import event_answer, user, event, auth
 from app.api.websocket import router as websocket_router
 
 
@@ -37,6 +37,7 @@ app.add_middleware(SlowAPIMiddleware)
 register_exception_handlers(app)
 
 # API routers
+app.include_router(auth.router, prefix="/api")
 app.include_router(user.router, prefix="/api")
 app.include_router(event.router, prefix="/api")
 app.include_router(event_answer.router, prefix="/api")

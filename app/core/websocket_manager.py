@@ -37,8 +37,6 @@ class InMemoryWebSocketManager:
                 pass
             return
 
-        await websocket.accept()
-
         if event_id not in self.active_connections:
             self.active_connections[event_id] = set()
 
