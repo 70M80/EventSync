@@ -20,7 +20,7 @@ services:
     build: .
     command: alembic upgrade head
     env_file:
-      - .env.production
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
     build: .
     restart: unless-stopped
     env_file:
-      - .env.production
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     env_file:
-      - .env.production
+      - .env
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - /var/www/vue:/var/www/vue:ro
