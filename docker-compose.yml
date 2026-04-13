@@ -55,8 +55,8 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
     env_file:
       - .env.production
     volumes:
@@ -75,6 +75,8 @@ services:
   certbot:
     image: certbot/certbot
     restart: unless-stopped
+    env_file:
+      - .env.production
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
@@ -82,10 +84,20 @@ services:
     entrypoint: >
       /bin/sh -c "
       trap exit TERM;
+
+      if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+        echo '=== First run - Requesting certificate ==='
+        certbot certonly --webroot -w /var/www/certbot \
+          --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email \
+          -d ${DOMAIN} --non-interactive || true
+      fi
+
       while :; do
-        certbot renew --webroot -w /var/www/certbot --quiet --deploy-hook 'nginx -s reload';
-        sleep 12h & wait $${!};
-      done;"
+        echo '=== Running certbot renew ==='
+        certbot renew --webroot -w /var/www/certbot --quiet
+        sleep 12h
+      done
+      "
     depends_on:
       - nginx
     networks:
