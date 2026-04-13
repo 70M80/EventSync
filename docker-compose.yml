@@ -83,20 +83,27 @@ services:
       - webroot:/var/www/certbot
     entrypoint: >
       /bin/sh -c "
-      trap exit TERM;
+        trap exit TERM;
+        echo '=== Certbot service started for ${DOMAIN} ===';
 
-      if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
-        echo '=== First run - Requesting certificate ==='
-        certbot certonly --webroot -w /var/www/certbot \
-          --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email \
-          -d ${DOMAIN} --non-interactive || true
-      fi
+        if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+          echo '=== Requesting initial certificate ===';
+          certbot certonly --webroot -w /var/www/certbot \
+            --email ${CERTBOT_EMAIL} \
+            --agree-tos \
+            --no-eff-email \
+            -d ${DOMAIN} \
+            --non-interactive \
+            --quiet || echo 'Certificate request failed or already exists';
+        else
+          echo '=== Certificate already exists ===';
+        fi
 
-      while :; do
-        echo '=== Running certbot renew ==='
-        certbot renew --webroot -w /var/www/certbot --quiet
-        sleep 12h
-      done
+        while :; do
+          echo '=== Running certbot renew check ===';
+          certbot renew --webroot -w /var/www/certbot --quiet || true;
+          sleep 12h;
+        done
       "
     depends_on:
       - nginx
