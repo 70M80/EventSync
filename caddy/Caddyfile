@@ -1,8 +1,6 @@
 {$DOMAIN} {
 
-    tls {
-        email {$CERTBOT_EMAIL}
-    }
+    tls {$CERTBOT_EMAIL}
 
     encode zstd gzip
 
