@@ -10,9 +10,9 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
     networks:
       - internal
 
@@ -39,10 +39,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
     logging:
       driver: "json-file"
       options:
@@ -64,11 +64,6 @@ services:
       - /var/www/vue:/var/www/vue:ro
       - caddy_data:/data
       - caddy_config:/config
-    healthcheck:
-      test: ["CMD", "caddy", "version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     depends_on:
       - app
     networks:
