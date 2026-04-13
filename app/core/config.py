@@ -2,15 +2,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="forbid")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    env: str
     database_url: str
     async_database_url: str
-    engine_pool_size: int = 20
-    engine_max_overflow: int = 10
-    db_timeout: int = 20
+    engine_pool_size: int = 5
+    engine_max_overflow: int = 5
     command_timeout: int = 45
     statement_timeout: str = "60000"
+    pool_recycle: int = 1800
+    pool_timeout: int = 30
 
     max_users_per_event: int = 20
     max_responses_per_user: int = 10

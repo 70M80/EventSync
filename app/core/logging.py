@@ -8,8 +8,6 @@ from app.core.config import settings
 
 
 class JSONFormatter(logging.Formatter):
-    """JSON formatter for structured logging"""
-
     def format(self, record: logging.LogRecord) -> str:
         log_data: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -22,21 +20,20 @@ class JSONFormatter(logging.Formatter):
         if extra_data:
             log_data.update(extra_data)
 
-        # Add exception info if present
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
 
-        # Safe JSON serialization with fallback
-        try:
-            return json.dumps(log_data, default=str)
-        except (TypeError, ValueError):
-            # Fallback for non-serializable content
-            log_data["message"] = str(log_data["message"])
-            return json.dumps(log_data, default=str)
+        return json.dumps(log_data, default=str)
+
+
+class DevFormatter(logging.Formatter):
+    """Readable logs for development"""
+
+    def format(self, record: logging.LogRecord) -> str:
+        return f"{datetime.now().strftime('%H:%M:%S')} | {record.levelname:<8} | {record.name} | {record.getMessage()}"
 
 
 def get_log_level(level_str: str) -> int:
-    """Convert string log level to logging module constant"""
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
@@ -48,39 +45,38 @@ def get_log_level(level_str: str) -> int:
 
 
 def setup_logging():
-    # Get log level from settings
     log_level = get_log_level(settings.log_level)
+    is_prod = settings.env == "production"
 
-    # Create logger
     logger = logging.getLogger("fastapi_app")
     logger.setLevel(log_level)
 
-    # Prevent duplicate handlers if already configured
     if logger.handlers:
         for handler in logger.handlers:
             handler.setLevel(log_level)
         return logger
 
-    # Create console handler
+    # ===== FORMATTER =====
+    formatter = JSONFormatter() if is_prod else DevFormatter()
+
+    # ===== CONSOLE =====
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
-    console_handler.setFormatter(JSONFormatter())
-
-    # Create file handler for production logs
-    file_handler = RotatingFileHandler(
-        "app.log",
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,  # 10MB files, keep 5 backups
-    )
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(JSONFormatter())
-
-    # Add handlers to logger
+    console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+
+    # ===== FILE (DEV) =====
+    if not is_prod:
+        file_handler = RotatingFileHandler(
+            "app.log",
+            maxBytes=5 * 1024 * 1024,
+            backupCount=2,
+        )
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     return logger
 
 
-# Initialize the logger
 logger = setup_logging()

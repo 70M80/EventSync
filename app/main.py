@@ -37,7 +37,12 @@ app.add_middleware(SlowAPIMiddleware)
 register_exception_handlers(app)
 
 # API routers
-app.include_router(user.router)
-app.include_router(event.router)
-app.include_router(event_answer.router)
+app.include_router(user.router, prefix="/api")
+app.include_router(event.router, prefix="/api")
+app.include_router(event_answer.router, prefix="/api")
 app.include_router(websocket_router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

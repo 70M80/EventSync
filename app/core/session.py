@@ -10,8 +10,9 @@ engine = create_async_engine(
     max_overflow=settings.engine_max_overflow,
     pool_pre_ping=True,
     poolclass=AsyncAdaptedQueuePool,
+    pool_recycle=settings.pool_recycle,
+    pool_timeout=settings.pool_timeout,
     connect_args={
-        "timeout": settings.db_timeout,
         "command_timeout": settings.command_timeout,
         "server_settings": {
             "statement_timeout": settings.statement_timeout,

@@ -1,0 +1,101 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  migration:
+    build: .
+    command: alembic upgrade head
+    env_file:
+      - .env.production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+    profiles: ["migration"]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env.production
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+      - ./nginx/nginx-entrypoint.sh:/entrypoint.sh:ro
+      - /var/www/vue:/var/www/vue:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    depends_on:
+      - app
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    entrypoint: >
+      /bin/sh -c "
+      trap exit TERM;
+      while :; do
+        certbot renew --webroot -w /var/www/certbot --quiet --deploy-hook 'nginx -s reload';
+        sleep 12h & wait $${!};
+      done;"
+    depends_on:
+      - nginx
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  certbot-etc:
+  certbot-var:
+  webroot:
+
+networks:
+  internal:
