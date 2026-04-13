@@ -1,0 +1,44 @@
+{$DOMAIN} {
+
+    tls {
+        email {$CERTBOT_EMAIL}
+    }
+
+    encode zstd gzip
+
+    # ================= API =================
+    handle /api/* {
+        reverse_proxy app:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # ================= WebSockets =================
+    handle /ws/* {
+        reverse_proxy app:8000
+    }
+
+    # ================= Vue SPA =================
+    handle {
+        root * /var/www/vue
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    # ================= Security =================
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
