@@ -55,7 +55,10 @@ class EventAnswerService:
             user.event_id,
             {
                 "type": WSMessageType.EVENT_ANSWER_CREATED.value,
-                "data": {"event_answer": EventAnswerRead.model_validate(created_event_answer).model_dump(mode="json")},
+                "data": {
+                    "event_answer": EventAnswerRead.model_validate(created_event_answer).model_dump(mode="json"),
+                    "username": user.username,
+                },
             },
         )
 

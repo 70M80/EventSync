@@ -5,6 +5,7 @@ from app.services.user_service import UserService
 from app.dependencies.common import get_user_service
 from app.core.logging import logger
 from app.schemas.websocket import WSMessageType
+from app.exceptions.base import UnknownAccessCode
 
 
 router = APIRouter(tags=["websocket"])
@@ -35,8 +36,9 @@ async def websocket_endpoint(
         await websocket.close(code=4001, reason="Missing access_code")
         return
 
-    user = await user_service.get_by_access_code(access_code)
-    if not user:
+    try:
+        user = await user_service.get_by_access_code(access_code)
+    except UnknownAccessCode:
         await websocket.close(code=4001, reason="Invalid or expired access code")
         return
 
