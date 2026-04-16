@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     idle_timeout: int = 120
     max_connections_per_event: int = 20
 
+    cookie_expire: int = 604800
+
     log_level: str = "INFO"
 
     cors_origins: list[str] = ["http://localhost:8000", "http://127.0.0.1:5173"]

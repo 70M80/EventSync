@@ -14,4 +14,6 @@ def set_access_cookie(response: Response, access_code: str) -> None:
         secure=secure,
         samesite="lax",
         path="/",
+        max_age=settings.cookie_expire,
+        expires=settings.cookie_expire,
     )
