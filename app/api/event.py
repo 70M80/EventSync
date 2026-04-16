@@ -22,12 +22,9 @@ async def create_event(
     data: EventCreate,
     event_service: EventService = Depends(get_event_service),
 ):
-    event, user = await event_service.create_event(data)
-    set_access_cookie(response, user.access_code)
-    return EventCreateResponse(
-        event=EventRead.model_validate(event),
-        user=UserReadWithAccessCode.model_validate(user),
-    )
+    event_response = await event_service.create(data)
+    set_access_cookie(response, event_response.user.access_code)
+    return event_response
 
 
 @router.get("/", response_model=EventRead)
@@ -44,4 +41,4 @@ async def update_event(
     event: Event = Depends(get_admin_event),
     event_service: EventService = Depends(get_event_service),
 ):
-    return await event_service.update_event(event, data)
+    return await event_service.update(event, data)

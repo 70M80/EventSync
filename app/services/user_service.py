@@ -1,5 +1,5 @@
 from app.core.uow import UnitOfWork
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, UsersRead
 from app.core.security import verify_password
 from app.models.user import User
 from app.core.codegen import generate_unique_user_code
@@ -36,14 +36,10 @@ class UserService:
             raise UnknownAccessCode()
         return user
 
-    async def create_user(self, data: UserCreate) -> User:
+    async def create(self, data: UserCreate) -> User:
         async with self.uow:
-            data_dict = data.model_dump()
-            event_code = data_dict.pop("event_code")
-            event_password = data_dict.pop("event_password")
-
             # Lock
-            event = await self.uow.events.get_by_code_for_update(event_code)
+            event = await self.uow.events.get_by_code_for_update(data.event_code)
             if not event:
                 raise EventNotFound()
 
@@ -51,16 +47,15 @@ class UserService:
             if len(users_in_event) >= settings.max_users_per_event:
                 raise EventFull()
 
-            if not verify_password(event_password, event.hashed_password):
+            if not verify_password(data.event_password, event.hashed_password):
                 raise InvalidEventPassword()
 
-            if await self.uow.users.get_by_username_and_event_id(data_dict["username"], event.id):
+            if await self.uow.users.get_by_username_and_event_id(data.username, event.id):
                 raise UserAlreadyExistsInEvent()
 
             code = await generate_unique_user_code(self.uow)
-            user = await self.uow.users.create(
-                User(username=data_dict["username"], event_id=event.id, access_code=code)
-            )
+            user = User(username=data.username, event_id=event.id, access_code=code)
+            user = await self.uow.users.store(user)
             logger.info("User created", extra={"user_id": user.id, "event_id": event.id})
 
         await self.ws_manager.broadcast_to_event(
@@ -72,7 +67,7 @@ class UserService:
         )
         return user
 
-    async def delete_user(self, user: User) -> None:
+    async def delete(self, user: User) -> None:
         async with self.uow:
             event = await self.uow.events.get_by_id(user.event_id)
             if not event:
@@ -90,5 +85,6 @@ class UserService:
             },
         )
 
-    async def get_users_by_event_id(self, event_id: int) -> list[User]:
-        return await self.uow.users.get_by_event_id(event_id)
+    async def list_by_event(self, event_id: int) -> UsersRead:
+        users = await self.uow.users.get_by_event_id(event_id)
+        return UsersRead(users=[UserRead.model_validate(p) for p in users])

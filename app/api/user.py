@@ -19,7 +19,7 @@ async def create_user(
     data: UserCreate,
     user_service: UserService = Depends(get_user_service),
 ):
-    user = await user_service.create_user(data)
+    user = await user_service.create(data)
     set_access_cookie(response, user.access_code)
     return user
 
@@ -38,9 +38,7 @@ async def get_event_users(
     user: User = Depends(get_current_user),
     user_service: UserService = Depends(get_user_service),
 ):
-    users = await user_service.get_users_by_event_id(user.event_id)
-    user_reads = [UserRead.model_validate(p) for p in users]
-    return UsersRead(users=user_reads)
+    return await user_service.list_by_event(user.event_id)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -50,4 +48,4 @@ async def delete_user(
     user: User = Depends(get_authorized_user),
     user_service: UserService = Depends(get_user_service),
 ):
-    await user_service.delete_user(user)
+    await user_service.delete(user)

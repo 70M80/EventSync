@@ -1,5 +1,5 @@
 from app.core.uow import UnitOfWork
-from app.schemas.event_answer import EventAnswerCreate, EventAnswerRead, EventAnswerResult
+from app.schemas.event_answer import EventAnswerCreate, EventAnswerRead, EventAnswerResult, EventAnswersRead
 from app.models.event_answer import EventAnswer
 from app.models.user import User
 from app.core.logging import logger
@@ -21,7 +21,7 @@ class EventAnswerService:
             raise EventAnswerNotFound()
         return event_answer
 
-    async def create_event_answer(self, data: EventAnswerCreate, user: User) -> EventAnswerResult:
+    async def create(self, data: EventAnswerCreate, user: User) -> EventAnswerResult:
         async with self.uow:
             user_responses = await self.uow.event_answers.get_by_user_id_for_update(user.id)
             event = await self.uow.events.get_by_id(user.event_id)
@@ -49,14 +49,14 @@ class EventAnswerService:
                 event_id=user.event_id,
             )
 
-            created_event_answer = await self.uow.event_answers.create(event_answer)
+            event_answer = await self.uow.event_answers.store(event_answer)
 
         await self.ws_manager.broadcast_to_event(
             user.event_id,
             {
                 "type": WSMessageType.EVENT_ANSWER_CREATED.value,
                 "data": {
-                    "event_answer": EventAnswerRead.model_validate(created_event_answer).model_dump(mode="json"),
+                    "event_answer": EventAnswerRead.model_validate(event_answer).model_dump(mode="json"),
                     "username": user.username,
                 },
             },
@@ -75,11 +75,9 @@ class EventAnswerService:
             )
         deleted_ids = [deleted_response.id for deleted_response in deleted_responses]
 
-        return EventAnswerResult(
-            event_answer=EventAnswerRead.model_validate(created_event_answer), deleted_ids=deleted_ids
-        )
+        return EventAnswerResult(event_answer=EventAnswerRead.model_validate(event_answer), deleted_ids=deleted_ids)
 
-    async def delete_event_answer(self, event_answer: EventAnswer) -> None:
+    async def delete(self, event_answer: EventAnswer) -> None:
         async with self.uow:
             await self.uow.event_answers.delete(event_answer)
             logger.info("Event response deleted", extra={"event_answer_id": event_answer.id})
@@ -92,9 +90,9 @@ class EventAnswerService:
             },
         )
 
-    async def get_event_answers_by_event_id(self, event_id: int) -> list[EventAnswer]:
+    async def get_by_event_id(self, event_id: int) -> EventAnswersRead:
         event_answers = await self.uow.event_answers.get_by_event_id(event_id)
-        return event_answers
+        return EventAnswersRead(event_answers=[EventAnswerRead.model_validate(p) for p in event_answers])
 
     def _merge_intervals(
         self, existing: list[EventAnswer], new_start: date, new_end: date

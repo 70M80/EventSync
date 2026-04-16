@@ -7,7 +7,7 @@ class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create(self, user: User) -> User:
+    async def store(self, user: User) -> User:
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

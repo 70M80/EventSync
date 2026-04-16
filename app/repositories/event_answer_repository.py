@@ -7,7 +7,7 @@ class EventAnswerRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create(self, event_answer: EventAnswer) -> EventAnswer:
+    async def store(self, event_answer: EventAnswer) -> EventAnswer:
         self.db.add(event_answer)
         await self.db.flush()
         await self.db.refresh(event_answer)

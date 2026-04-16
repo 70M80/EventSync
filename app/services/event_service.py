@@ -1,5 +1,6 @@
 from app.core.uow import UnitOfWork
-from app.schemas.event import EventCreate, EventUpdate
+from app.schemas.event import EventCreate, EventUpdate, EventCreateResponse, EventRead
+from app.schemas.user import UserReadWithAccessCode
 from app.models.event import Event
 from app.models.user import User
 from app.core.security import hash_password
@@ -18,38 +19,35 @@ class EventService:
             raise EventNotFound()
         return event
 
-    async def create_event(self, data: EventCreate) -> tuple[Event, User]:
+    async def create(self, data: EventCreate) -> EventCreateResponse:
         async with self.uow:
-            data_dict = data.model_dump()
-            username = data_dict.pop("username")
-            data_dict["hashed_password"] = hash_password(data_dict["password"])
-            data_dict.pop("password")
-
+            hashed_password = hash_password(data.password)
             code = await generate_unique_event_code(self.uow)
-            data_dict["code"] = code
-            event = Event(**data_dict)
-            created_event = await self.uow.events.create(event)
+            event = Event(name=data.name, max_responses=data.max_responses, hashed_password=hashed_password, code=code)
+            event = await self.uow.events.store(event)
 
             access_code = await generate_unique_user_code(self.uow)
+            admin_user = User(username=data.username, event_id=event.id, access_code=access_code)
+            admin_user = await self.uow.users.store(admin_user)
 
-            user = await self.uow.users.create(
-                User(
-                    username=username,
-                    event_id=created_event.id,
-                    access_code=access_code,
-                )
+            event.admin_id = admin_user.id
+            event = await self.uow.events.store(event)
+
+            logger.info("Event created", extra={"event_id": event.id, "admin_id": admin_user.id})
+            return EventCreateResponse(
+                event=EventRead.model_validate(event),
+                user=UserReadWithAccessCode.model_validate(admin_user),
             )
 
-            event_with_admin_id = await self.uow.events.update(created_event, {"admin_id": user.id})
-            logger.info("Event created", extra={"event_id": event_with_admin_id.id, "admin_id": user.id})
-            return event_with_admin_id, user
-
-    async def update_event(self, event: Event, data: EventUpdate) -> Event:
+    async def update(self, event: Event, data: EventUpdate) -> Event:
         async with self.uow:
-            update_data = data.model_dump(exclude_unset=True)
-            if not update_data:
+            update_dict = data.model_dump(exclude_unset=True)
+            if not update_dict:
                 raise NoFieldsToUpdate()
 
-            updated_event = await self.uow.events.update(event, update_data)
-            logger.info("Event updated", extra={"event_id": event.id, "updated_fields": list(update_data.keys())})
-            return updated_event
+            for key, value in update_dict.items():
+                setattr(event, key, value)
+
+            await self.uow.events.store(event)
+            logger.info("Event updated", extra={"event_id": event.id, "updated_fields": list(update_dict.keys())})
+            return event

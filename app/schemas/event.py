@@ -112,7 +112,5 @@ class EventRead(BaseModel):
 
 
 class EventCreateResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     user: UserReadWithAccessCode
     event: EventRead
